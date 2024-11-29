@@ -16,13 +16,14 @@ describe('ClientsService', () => {
         {
           provide: getRepositoryToken(Client),
           useValue: {
+            create: jest.fn(),
             save: jest.fn(),
             find: jest.fn(),
             findOneBy: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
           },
-        },
+        }
       ],
     }).compile();
 
@@ -38,19 +39,26 @@ describe('ClientsService', () => {
     expect(service).toBeDefined();
   });
 
+  it('repository should be defined', () => {
+    expect(repository).toBeDefined();
+  });
+
   describe('create', () => {
     it('should create a new client', async () => {
       const createClientDto: CreateClientDto = { name: 'Eduardo', salary: 3500, companyValue: 120000 };
-      const savedClient = { id: 1, ...createClientDto };
+      const savedClient: Client = { id: 1, ...createClientDto };
 
-      repository.save.mockResolvedValue(savedClient as Client);
+      repository.create.mockReturnValue(savedClient);
+      repository.save.mockResolvedValue(savedClient);
 
       const result = await service.create(createClientDto);
 
+      expect(repository.create).toHaveBeenCalledWith(createClientDto);
+      expect(repository.save).toHaveBeenCalledWith(savedClient);
       expect(result).toEqual(savedClient);
-      expect(repository.save).toHaveBeenCalledWith(createClientDto);
     });
   });
+
 
   describe('findAll', () => {
     it('should return all clients', async () => {
@@ -99,12 +107,16 @@ describe('ClientsService', () => {
 
   describe('remove', () => {
     it('should delete a client by ID', async () => {
+      const client: Client = { id: 1, name: 'Eduardo', salary: 3500, companyValue: 120000 };
+
+      repository.findOneBy.mockResolvedValue(client);
       repository.delete.mockResolvedValue(undefined);
 
       const result = await service.remove(1);
 
-      expect(result).toBeUndefined();
+      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
       expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(result).toBeUndefined();
     });
   });
 });
