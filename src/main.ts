@@ -18,6 +18,12 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
 
+  app.enableCors({
+    origin: 'http://localhost:4200',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
+
   await app.listen(process.env.PORT ?? 3000);
 
   logger.log(`Application is running on: http://localhost:3000`);
