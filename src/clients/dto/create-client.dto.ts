@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsNumber, Min } from 'class-validator';
 
 export class CreateClientDto {
-  @ApiProperty({ description: 'The name of the client' })
+  @ApiProperty({ description: 'The name of the client', example: "Eduardo" })
   @IsNotEmpty()
   @IsString()
   name: string;
