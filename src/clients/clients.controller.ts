@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
@@ -26,11 +27,26 @@ export class ClientsController {
     return await this.clientsService.create(createClientDto);
   }
 
-  @ApiOperation({ summary: 'Retrieve all clients' })
-  @ApiResponse({ status: 200, description: 'List of all clients.', type: [Client] })
-  @Get()
-  async findAll(): Promise<Client[]> {
-    return await this.clientsService.findAll();
+  @ApiOperation({ summary: 'Retrieve all clients (paginated)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of clients.',
+    schema: {
+      properties: {
+        data: { type: 'array', items: { $ref: '#/components/schemas/Client' } },
+        total: { type: 'number' },
+      },
+    },
+  })
+  @Get('paginated')
+  async findAllPaginated(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+  ): Promise<{ data: Client[]; total: number }> {
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+
+    return this.clientsService.findAllPaginated(pageNumber, limitNumber);
   }
 
   @ApiOperation({ summary: 'Retrieve a client by ID' })
