@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
 import { ClientsModule } from './clients/clients.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -14,9 +14,12 @@ import { ClientsModule } from './clients/clients.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => typeOrmConfig(configService),
     }),
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      }
+    }),
     ClientsModule
   ],
-  controllers: [],
-  providers: [AppService],
 })
 export class AppModule { }
