@@ -4,30 +4,40 @@ import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { Histogram } from 'prom-client';
 
 @Injectable()
 export class ClientsService {
   private readonly logger = new Logger(ClientsService.name);
+  private readonly dbQueryDuration: Histogram<string>;
 
   constructor(
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
-  ) { }
+  ) {
+    this.dbQueryDuration = new Histogram({
+      name: 'clients_db_query_duration_seconds',
+      help: 'Duração de operações no banco de dados relacionadas a clients',
+      labelNames: ['operation'],
+      buckets: [0.01, 0.1, 0.5, 1, 2],
+    });
+  }
 
   async create(createClientDto: CreateClientDto): Promise<Client> {
-    this.logger.log(`Creating client: ${JSON.stringify(createClientDto)}`);
-    const client = this.clientRepository.create(createClientDto);
-
+    const start = Date.now();
     try {
-      return await this.clientRepository.save(client);
+      const client = this.clientRepository.create(createClientDto);
+      const result = await this.clientRepository.save(client);
+      return result;
     } catch (error) {
-      this.logger.error(`Failed to create client: ${error.message}`, error.stack);
-      throw new BadRequestException('Failed to create client. Please check the input.');
+      throw new BadRequestException('Failed to create client.');
+    } finally {
+      const duration = (Date.now() - start) / 1000;
+      this.dbQueryDuration.observe({ operation: 'create' }, duration);
     }
   }
 
   async findAll(): Promise<Client[]> {
-    this.logger.log('Fetching all clients');
     return this.clientRepository.find();
   }
 
@@ -38,21 +48,22 @@ export class ClientsService {
     order: 'ASC' | 'DESC' = 'DESC',
     filterName?: string,
   ) {
-    const skip = (page - 1) * limit;
+    const start = Date.now();
+    try {
+      const skip = (page - 1) * limit;
+      const queryBuilder = this.clientRepository.createQueryBuilder('client');
 
-    const queryBuilder = this.clientRepository.createQueryBuilder('client');
+      if (filterName) {
+        queryBuilder.andWhere('client.name ILIKE :filterName', { filterName: `%${filterName}%` });
+      }
 
-    if (filterName) {
-      queryBuilder.andWhere('client.name ILIKE :filterName', { filterName: `%${filterName}%` });
+      queryBuilder.orderBy(`client.${sort}`, order).skip(skip).take(limit);
+      const [data, total] = await queryBuilder.getManyAndCount();
+      return { data, total };
+    } finally {
+      const duration = (Date.now() - start) / 1000;
+      this.dbQueryDuration.observe({ operation: 'findAllPaginated' }, duration);
     }
-
-    queryBuilder.orderBy(`client.${sort}`, order);
-
-    queryBuilder.skip(skip).take(limit);
-
-    const [data, total] = await queryBuilder.getManyAndCount();
-
-    return { data, total };
   }
 
 
