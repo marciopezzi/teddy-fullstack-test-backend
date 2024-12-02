@@ -18,11 +18,13 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
 
-  app.enableCors({
-    origin: 'http://localhost:4200',
+  app.enableCors(
+    {
+    origin: ['http://localhost:4200', 'http://teddy-angular.s3-website-sa-east-1.amazonaws.com'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
-  });
+    allowedHeaders: 'Content-Type, Authorization'
+  },
+);
 
   await app.listen(process.env.PORT ?? 3000);
 
