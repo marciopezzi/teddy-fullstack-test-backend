@@ -23,6 +23,7 @@
     "migration:revert": "npm run typeorm migration:revert",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d --build",
     "seed": "npx ts-node ./src/seed.ts"
   },
   "dependencies": {
