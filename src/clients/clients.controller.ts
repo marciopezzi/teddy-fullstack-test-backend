@@ -14,17 +14,45 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Client } from './entities/client.entity';
+import { Counter, Histogram } from 'prom-client';
 
 @ApiTags('clients')
 @Controller('clients')
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) { }
+  private readonly requestCounter: Counter<string>;
+  private readonly requestDuration: Histogram<string>;
+
+  constructor(private readonly clientsService: ClientsService) {
+    this.requestCounter = new Counter({
+      name: 'clients_requests_total',
+      help: 'Volume de requisições recebidas no endpoint /clients',
+      labelNames: ['method', 'route', 'status'],
+    });
+
+    this.requestDuration = new Histogram({
+      name: 'clients_request_duration_seconds',
+      help: 'Demora das requisições no endpoint /clients',
+      labelNames: ['method', 'route', 'status'],
+      buckets: [0.1, 0.5, 1, 2.5, 5],
+    });
+  }
 
   @ApiOperation({ summary: 'Create a new client' })
   @ApiResponse({ status: 201, description: 'Client created successfully.', type: Client })
   @Post()
   async create(@Body() createClientDto: CreateClientDto): Promise<Client> {
-    return await this.clientsService.create(createClientDto);
+    const start = Date.now();
+    try {
+      const result = await this.clientsService.create(createClientDto);
+      this.requestCounter.inc({ method: 'POST', route: '/clients', status: 201 });
+      return result;
+    } catch (error) {
+      this.requestCounter.inc({ method: 'POST', route: '/clients', status: 400 });
+      throw error;
+    } finally {
+      const duration = (Date.now() - start) / 1000;
+      this.requestDuration.observe({ method: 'POST', route: '/clients', status: '201' }, duration);
+    }
   }
 
   @ApiOperation({ summary: 'Retrieve all clients (paginated, filterable, and sortable)' })
@@ -46,10 +74,21 @@ export class ClientsController {
     @Query('order') order: 'ASC' | 'DESC' = 'DESC',
     @Query('filterName') filterName?: string,
   ): Promise<{ data: Client[]; total: number }> {
-    const pageNumber = parseInt(page, 10) || 1;
-    const limitNumber = parseInt(limit, 10) || 10;
-
-    return this.clientsService.findAllPaginated(pageNumber, limitNumber, sort, order, filterName);
+    const start = Date.now();
+    try {
+      const result = await this.clientsService.findAllPaginated(
+        parseInt(page, 10),
+        parseInt(limit, 10),
+        sort,
+        order,
+        filterName,
+      );
+      this.requestCounter.inc({ method: 'GET', route: '/clients/paginated', status: 200 });
+      return result;
+    } finally {
+      const duration = (Date.now() - start) / 1000;
+      this.requestDuration.observe({ method: 'GET', route: '/clients/paginated', status: '200' }, duration);
+    }
   }
 
   @ApiOperation({ summary: 'Retrieve a client by ID' })
