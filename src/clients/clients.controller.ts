@@ -27,10 +27,10 @@ export class ClientsController {
     return await this.clientsService.create(createClientDto);
   }
 
-  @ApiOperation({ summary: 'Retrieve all clients (paginated)' })
+  @ApiOperation({ summary: 'Retrieve all clients (paginated, filterable, and sortable)' })
   @ApiResponse({
     status: 200,
-    description: 'Paginated list of clients.',
+    description: 'Paginated list of clients with filtering and sorting.',
     schema: {
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/Client' } },
@@ -42,11 +42,14 @@ export class ClientsController {
   async findAllPaginated(
     @Query('page') page: string,
     @Query('limit') limit: string,
+    @Query('sort') sort: string = 'createdAt',
+    @Query('order') order: 'ASC' | 'DESC' = 'DESC',
+    @Query('filterName') filterName?: string,
   ): Promise<{ data: Client[]; total: number }> {
     const pageNumber = parseInt(page, 10) || 1;
     const limitNumber = parseInt(limit, 10) || 10;
 
-    return this.clientsService.findAllPaginated(pageNumber, limitNumber);
+    return this.clientsService.findAllPaginated(pageNumber, limitNumber, sort, order, filterName);
   }
 
   @ApiOperation({ summary: 'Retrieve a client by ID' })

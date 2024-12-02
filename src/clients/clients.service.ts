@@ -31,16 +31,30 @@ export class ClientsService {
     return this.clientRepository.find();
   }
 
-  async findAllPaginated(page: number = 1, limit: number = 10) {
+  async findAllPaginated(
+    page: number = 1,
+    limit: number = 10,
+    sort: string = 'createdAt',
+    order: 'ASC' | 'DESC' = 'DESC',
+    filterName?: string,
+  ) {
     const skip = (page - 1) * limit;
 
-    const [data, total] = await this.clientRepository.findAndCount({
-      skip,
-      take: limit,
-    });
+    const queryBuilder = this.clientRepository.createQueryBuilder('client');
+
+    if (filterName) {
+      queryBuilder.andWhere('client.name ILIKE :filterName', { filterName: `%${filterName}%` });
+    }
+
+    queryBuilder.orderBy(`client.${sort}`, order);
+
+    queryBuilder.skip(skip).take(limit);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return { data, total };
   }
+
 
   async findOne(id: number): Promise<Client> {
     this.logger.log(`Fetching client with id: ${id}`);
