@@ -10,13 +10,12 @@ COPY . .
 
 RUN npm run build
 
-# --- Duas etapas para reduzir o tamanho da imagem no fim
+# ---
 
 FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
-# Apenas os artefatos necessários
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
