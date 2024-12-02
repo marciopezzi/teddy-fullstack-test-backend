@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -66,6 +66,11 @@ export class ClientsController {
       },
     },
   })
+  @ApiQuery({ name: 'page', type: String, required: true, example: '1', description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', type: String, required: true, example: '8', description: 'Number of items per page' })
+  @ApiQuery({ name: 'sort', type: String, required: false, example: 'createdAt', description: 'Field to sort by' })
+  @ApiQuery({ name: 'order', enum: ['DESC', 'ASC'], required: true, description: 'Sort order' })
+  @ApiQuery({ name: 'filterName', type: String, required: false, description: 'Filter by client name' })
   @Get('paginated')
   async findAllPaginated(
     @Query('page') page: string,
