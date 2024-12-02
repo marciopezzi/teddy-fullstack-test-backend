@@ -46,7 +46,12 @@ describe('ClientsService', () => {
   describe('create', () => {
     it('should create a new client', async () => {
       const createClientDto: CreateClientDto = { name: 'Eduardo', salary: 3500, companyValue: 120000 };
-      const savedClient: Client = { id: 1, ...createClientDto };
+      const savedClient: Client = {
+        id: 1,
+        ...createClientDto,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
       repository.create.mockReturnValue(savedClient);
       repository.save.mockResolvedValue(savedClient);
@@ -107,7 +112,14 @@ describe('ClientsService', () => {
 
   describe('remove', () => {
     it('should delete a client by ID', async () => {
-      const client: Client = { id: 1, name: 'Eduardo', salary: 3500, companyValue: 120000 };
+      const client: Client = {
+        id: 1,
+        name: 'Eduardo',
+        salary: 3500,
+        companyValue: 120000,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
       repository.findOneBy.mockResolvedValue(client);
       repository.delete.mockResolvedValue(undefined);
