@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-import { Histogram } from 'prom-client';
+import { Histogram, register } from 'prom-client';
 
 @Injectable()
 export class ClientsService {
@@ -15,12 +15,14 @@ export class ClientsService {
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
   ) {
-    this.dbQueryDuration = new Histogram({
-      name: 'clients_db_query_duration_seconds',
-      help: 'Duração de operações no banco de dados relacionadas a clients',
-      labelNames: ['operation'],
-      buckets: [0.01, 0.1, 0.5, 1, 2],
-    });
+    this.dbQueryDuration =
+      register.getSingleMetric('clients_db_query_duration_seconds') as Histogram<string> ||
+      new Histogram({
+        name: 'clients_db_query_duration_seconds',
+        help: 'Duração de operações no banco de dados relacionadas a clients',
+        labelNames: ['operation'],
+        buckets: [0.01, 0.1, 0.5, 1, 2],
+      });
   }
 
   async create(createClientDto: CreateClientDto): Promise<Client> {

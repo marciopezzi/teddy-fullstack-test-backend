@@ -4,12 +4,16 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Client } from '../entities/client.entity';
 import { Repository } from 'typeorm';
 import { CreateClientDto } from '../dto/create-client.dto';
+import { UpdateClientDto } from '../dto/update-client.dto';
+import { register } from 'prom-client';
 
 describe('ClientsService', () => {
   let service: ClientsService;
   let repository: jest.Mocked<Repository<Client>>;
 
   beforeEach(async () => {
+    register.clear();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ClientsService,
@@ -23,7 +27,7 @@ describe('ClientsService', () => {
             update: jest.fn(),
             delete: jest.fn(),
           },
-        }
+        },
       ],
     }).compile();
 
@@ -50,7 +54,7 @@ describe('ClientsService', () => {
         id: 1,
         ...createClientDto,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       repository.create.mockReturnValue(savedClient);
@@ -63,7 +67,6 @@ describe('ClientsService', () => {
       expect(result).toEqual(savedClient);
     });
   });
-
 
   describe('findAll', () => {
     it('should return all clients', async () => {
@@ -96,17 +99,24 @@ describe('ClientsService', () => {
 
   describe('update', () => {
     it('should update a client', async () => {
-      const updateClientDto = { name: 'Eduardo Atualizado', salary: 4000, companyValue: 130000 };
-      const updatedClient = { id: 1, ...updateClientDto };
+      const updateClientDto: UpdateClientDto = { name: 'Eduardo Atualizado', salary: 4000 };
+      const existingClient: Client = {
+        id: 1,
+        name: 'Eduardo',
+        salary: 3500,
+        companyValue: 120000,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const updatedClient = { ...existingClient, ...updateClientDto };
 
+      repository.findOneBy.mockResolvedValue(existingClient);
       repository.update.mockResolvedValue(undefined);
-      repository.findOneBy.mockResolvedValue(updatedClient as Client);
 
       const result = await service.update(1, updateClientDto);
 
-      expect(result).toEqual(updatedClient);
       expect(repository.update).toHaveBeenCalledWith(1, updateClientDto);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      expect(result).toEqual(updatedClient);
     });
   });
 
@@ -118,7 +128,7 @@ describe('ClientsService', () => {
         salary: 3500,
         companyValue: 120000,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       repository.findOneBy.mockResolvedValue(client);
