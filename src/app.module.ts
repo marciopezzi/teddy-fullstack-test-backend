@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from './config/typeorm.config';
+import { typeOrmConfig } from './core/config/typeorm.config';
 import { ClientsModule } from './clients/clients.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
@@ -12,14 +12,15 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => typeOrmConfig(configService),
+      useFactory: (configService: ConfigService) =>
+        typeOrmConfig(configService),
     }),
     PrometheusModule.register({
       defaultMetrics: {
         enabled: true,
-      }
+      },
     }),
-    ClientsModule
+    ClientsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}
